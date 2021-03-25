@@ -15,13 +15,13 @@ public enum DiceColor
 public class DiceHandler : MonoBehaviour
 {
     [Header("Die Values")]
-    [SerializeField]
-    private int value;
-    public int Value => value;
-    
-    [SerializeField]
-    private DiceColor dieColor;
-    public DiceColor DieColor => dieColor;
+    public int value;
+    public DiceColor dieColor;
+
+    public bool isSelected;
+
+    [Header("Grid Position")]
+    public Vector2 gridPosition;
 
     [Header("Tumble Values")]
     public float fallDelay;
@@ -43,9 +43,7 @@ public class DiceHandler : MonoBehaviour
         faceRotation[4] = new Vector3(90, 0, -90);
         faceRotation[5] = new Vector3(-90, 0, 0);
         faceRotation[6] = new Vector3(0, 0, -90);
-
-        value = Random.Range(1, 7);
-
+        
         startPosition = transform.position;
     }
 
@@ -68,11 +66,57 @@ public class DiceHandler : MonoBehaviour
 
             yield return null;
         }
+
+        lerpTime = 0.0f;
+
+        if (gridPosition.x == GameManager.instance.width - 1 && gridPosition.y == GameManager.instance.height - 1)
+            GameManager.instance.isSwapping = false;
     }
 
     public void AlignDie()
     {
         Vector3 rot = faceRotation[value];
         transform.rotation = Quaternion.Euler(rot.x, rot.y, rot.z);
+    }
+
+    private void OnMouseDown()
+    {
+        if (GameManager.instance.isSwapping)
+            return;
+
+        if (isSelected)
+        {
+            isSelected = false;
+            GameManager.instance.selectedDie = null;
+        }
+        else
+        {
+            if (GameManager.instance.selectedDie == null)
+            {
+                isSelected = true;
+                GameManager.instance.selectedDie = this;
+            }
+            else
+            {
+                DiceHandler selected = GameManager.instance.selectedDie;
+
+                if ((gridPosition.x == selected.gridPosition.x - 1 || gridPosition.x == selected.gridPosition.x + 1) &&
+                    (gridPosition.y == selected.gridPosition.y - 1 || gridPosition.y == selected.gridPosition.y + 1))
+                    GameManager.instance.SwapDice(gameObject);
+            }
+        }
+    }
+
+    public IEnumerator SwapPosition(Vector3 endPos)
+    {
+        while (lerpTime < 1)
+        {
+            lerpTime += fallSpeed * Time.deltaTime;
+            transform.position = Vector3.Lerp(startPosition, endPos, lerpTime);
+
+            yield return null;
+        }
+
+        lerpTime = 0.0f;
     }
 }
