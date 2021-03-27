@@ -81,9 +81,13 @@ public class GameManager : MonoBehaviour
         Vector3 tempPos = secondDie.transform.position;
 
         secondDie.GetComponent<DiceHandler>().gridPosition = selectedDie.gridPosition;
+        secondDie.GetComponent<DiceHandler>().startPosition = secondDie.transform.position;
         selectedDie.gridPosition = tempGrid;
+        selectedDie.startPosition = selectedDie.transform.position;
 
         StartCoroutine(secondDie.GetComponent<DiceHandler>().SwapPosition(selectedDie.transform.position));
         StartCoroutine(selectedDie.SwapPosition(tempPos));
+
+        selectedDie = null;
     }
 }

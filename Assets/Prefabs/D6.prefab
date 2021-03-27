@@ -110,8 +110,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   value: 0
   dieColor: 0
+  isSelected: 0
+  gridPosition: {x: 0, y: 0}
   fallDelay: 0
-  fallSpeed: 1
+  fallSpeed: 1.5
   isTumbling: 0
+  swapSpeed: 3
   startPosition: {x: 0, y: 0, z: 0}
-  endPosition: {x: 0, y: 0, z: 0}

@@ -11,14 +11,14 @@
                     "id": "a8d50b48-e5ca-4a1d-911d-217a32409588",
                     "expectedControlType": "Button",
                     "processors": "",
-                    "interactions": "Press(behavior=2)"
+                    "interactions": "Press"
                 },
                 {
-                    "name": "Drag",
+                    "name": "MousePosition",
                     "type": "Value",
-                    "id": "4ce2d583-99d9-48ca-a0ee-fbae7cfd5bc0",
+                    "id": "359b44b6-9ff7-4750-851b-324ac0645483",
                     "expectedControlType": "Vector2",
-                    "processors": "NormalizeVector2",
+                    "processors": "",
                     "interactions": ""
                 }
             ],
@@ -36,12 +36,12 @@
                 },
                 {
                     "name": "",
-                    "id": "9444e614-4185-4add-8618-5d89f57ec4b1",
-                    "path": "<Mouse>/delta",
+                    "id": "be579c13-f64c-47b2-be52-0fd048577700",
+                    "path": "<Mouse>/position",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Drag",
+                    "action": "MousePosition",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

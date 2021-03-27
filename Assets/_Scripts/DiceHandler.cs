@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public enum DiceColor
 {
@@ -28,10 +29,14 @@ public class DiceHandler : MonoBehaviour
     public float fallSpeed;
     public bool isTumbling;
 
+    public float swapSpeed;
+
     public Vector3 startPosition;
     private float lerpTime = 0.0f;
 
     private Dictionary<int, Vector3> faceRotation = new Dictionary<int, Vector3>();
+
+    private Vector2 mousePosition;
 
     // Start is called before the first frame update
     void Start()
@@ -79,30 +84,44 @@ public class DiceHandler : MonoBehaviour
         transform.rotation = Quaternion.Euler(rot.x, rot.y, rot.z);
     }
 
-    private void OnMouseDown()
+    public void OnMousePosition(InputValue value)
     {
-        if (GameManager.instance.isSwapping)
-            return;
+        mousePosition = value.Get<Vector2>();
+    }
 
-        if (isSelected)
+    public void OnSelect(InputValue value)
+    {
+        Ray ray = Camera.main.ScreenPointToRay(mousePosition);
+        RaycastHit hit;
+
+        Physics.Raycast(ray, out hit, 20.0f);
+        Debug.DrawRay(ray.origin, ray.direction, Color.blue, 1.0f);
+
+        if (hit.transform != null && hit.transform.CompareTag("Die") && hit.transform.gameObject == gameObject)
         {
-            isSelected = false;
-            GameManager.instance.selectedDie = null;
-        }
-        else
-        {
-            if (GameManager.instance.selectedDie == null)
+            if (GameManager.instance.isSwapping)
+                return;
+
+            if (isSelected)
             {
-                isSelected = true;
-                GameManager.instance.selectedDie = this;
+                isSelected = false;
+                GameManager.instance.selectedDie = null;
             }
             else
             {
-                DiceHandler selected = GameManager.instance.selectedDie;
+                if (GameManager.instance.selectedDie == null)
+                {
+                    isSelected = true;
+                    GameManager.instance.selectedDie = this;
+                }
+                else
+                {
+                    DiceHandler selected = GameManager.instance.selectedDie;
 
-                if ((gridPosition.x == selected.gridPosition.x - 1 || gridPosition.x == selected.gridPosition.x + 1) &&
-                    (gridPosition.y == selected.gridPosition.y - 1 || gridPosition.y == selected.gridPosition.y + 1))
-                    GameManager.instance.SwapDice(gameObject);
+                    if((gridPosition.x >= selected.gridPosition.x - 1 && gridPosition.x <= selected.gridPosition.x + 1 && gridPosition.y == selected.gridPosition.y) ||
+                        (gridPosition.y >= selected.gridPosition.y - 1 && gridPosition.y <= selected.gridPosition.y + 1 && gridPosition.x == selected.gridPosition.x))
+                        GameManager.instance.SwapDice(gameObject);
+                }
             }
         }
     }
@@ -111,12 +130,14 @@ public class DiceHandler : MonoBehaviour
     {
         while (lerpTime < 1)
         {
-            lerpTime += fallSpeed * Time.deltaTime;
+            lerpTime += swapSpeed * Time.deltaTime;
             transform.position = Vector3.Lerp(startPosition, endPos, lerpTime);
 
             yield return null;
         }
 
         lerpTime = 0.0f;
+        isSelected = false;
+        GameManager.instance.isSwapping = false;
     }
 }
