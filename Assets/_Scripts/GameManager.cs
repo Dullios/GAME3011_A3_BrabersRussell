@@ -77,17 +77,297 @@ public class GameManager : MonoBehaviour
     {
         isSwapping = true;
 
-        Vector2 tempGrid = secondDie.GetComponent<DiceHandler>().gridPosition;
+        DiceHandler secondHandler = secondDie.GetComponent<DiceHandler>();
+        Vector2 tempGrid = secondHandler.gridPosition;
         Vector3 tempPos = secondDie.transform.position;
 
-        secondDie.GetComponent<DiceHandler>().gridPosition = selectedDie.gridPosition;
-        secondDie.GetComponent<DiceHandler>().startPosition = secondDie.transform.position;
+        secondHandler.gridPosition = selectedDie.gridPosition;
+        secondHandler.startPosition = secondDie.transform.position;
+        board[(int)selectedDie.gridPosition.x, (int)selectedDie.gridPosition.y] = secondDie;
+        
         selectedDie.gridPosition = tempGrid;
         selectedDie.startPosition = selectedDie.transform.position;
+        board[(int)tempGrid.x, (int)tempGrid.y] = selectedDie.gameObject;
 
-        StartCoroutine(secondDie.GetComponent<DiceHandler>().SwapPosition(selectedDie.transform.position));
+        StartCoroutine(secondHandler.SwapPosition(selectedDie.transform.position));
         StartCoroutine(selectedDie.SwapPosition(tempPos));
 
+        CheckMatch(secondHandler);
+        CheckMatch(selectedDie);
+
         selectedDie = null;
+        isSwapping = false;
     }
+
+    public void CheckMatch(DiceHandler die)
+    {
+        if (CheckStraightFiveHorizontal(die))
+        {
+            Debug.Log("Horizontal Straight 5 Made!");
+            return;
+        }
+
+        if (CheckStraightSixHorizontal(die))
+        {
+            Debug.Log("Horizontal Straight 6 Made!");
+            return;
+        }
+
+        if (CheckStraightFiveVertical(die))
+        {
+            Debug.Log("Vertical Straight 5 Made!");
+            return;
+        }
+
+        if (CheckStraightSixVertical(die))
+        {
+            Debug.Log("Vertical Straight 6 Made!");
+            return;
+        }
+
+        if (CheckThreeHorizontal(die))
+        {
+            Debug.Log("Match Three Horizontal!");
+            return;
+        }
+
+        if (CheckThreeVertical(die))
+        {
+            Debug.Log("Match Three Vertical!");
+            return;
+        }
+    }
+
+    #region Match_Checks
+    private bool CheckStraightFiveHorizontal(DiceHandler die)
+    {
+        DiceHandler otherDie;
+
+        // Check 1-5
+        int leftCount = die.value - 1;
+
+        for(int i = leftCount; i > 0; i--)
+        {
+            if (die.gridPosition.x - i < 0)
+                return false;
+            else
+            {
+                otherDie = board[(int)(die.gridPosition.x - i), (int)die.gridPosition.y].GetComponent<DiceHandler>();
+                if (otherDie.dieColor != die.dieColor || otherDie.value != die.value - i)
+                    return false;
+                else
+                    continue;
+            }
+        }
+
+        int rightCount = 5 - die.value;
+
+        for (int i = rightCount; i > 0; i--)
+        {
+            if (die.gridPosition.x + i >= width)
+                return false;
+            else
+            {
+                otherDie = board[(int)(die.gridPosition.x + i), (int)die.gridPosition.y].GetComponent<DiceHandler>();
+                if (otherDie.dieColor != die.dieColor || otherDie.value != die.value + i)
+                    return false;
+                else
+                    continue;
+            }
+        }
+
+        return true;
+    }
+
+    private bool CheckStraightSixHorizontal(DiceHandler die)
+    {
+        DiceHandler otherDie;
+
+        // Check 2-6
+        int leftCount = die.value - 2;
+
+        for (int i = leftCount; i > 0; i--)
+        {
+            if (die.gridPosition.x - i < 0)
+                return false;
+            else
+            {
+                otherDie = board[(int)(die.gridPosition.x - i), (int)die.gridPosition.y].GetComponent<DiceHandler>();
+                if (otherDie.dieColor != die.dieColor || otherDie.value != die.value - i)
+                    return false;
+                else
+                    continue;
+            }
+        }
+
+        int rightCount = 6 - die.value;
+
+        for (int i = rightCount; i > 0; i--)
+        {
+            if (die.gridPosition.x + i >= width)
+                return false;
+            else
+            {
+                otherDie = board[(int)(die.gridPosition.x + i), (int)die.gridPosition.y].GetComponent<DiceHandler>();
+                if (otherDie.dieColor != die.dieColor || otherDie.value != die.value + i)
+                    return false;
+                else
+                    continue;
+            }
+        }
+
+        return true;
+    }
+
+    private bool CheckStraightFiveVertical(DiceHandler die)
+    {
+        DiceHandler otherDie;
+
+        // Check 1-5
+        int upCount = die.value - 1;
+
+        for (int i = upCount; i > 0; i--)
+        {
+            if (die.gridPosition.y + i >= height)
+                return false;
+            else
+            {
+                otherDie = board[(int)die.gridPosition.x, (int)(die.gridPosition.y + i)].GetComponent<DiceHandler>();
+                if (otherDie.dieColor != die.dieColor || otherDie.value != die.value - i)
+                    return false;
+                else
+                    continue;
+            }
+        }
+
+        int downCount = 5 - die.value;
+
+        for (int i = downCount; i > 0; i--)
+        {
+            if (die.gridPosition.y - i < 0)
+                return false;
+            else
+            {
+                otherDie = board[(int)die.gridPosition.x, (int)(die.gridPosition.y - i)].GetComponent<DiceHandler>();
+                if (otherDie.dieColor != die.dieColor || otherDie.value != die.value + i)
+                    return false;
+                else
+                    continue;
+            }
+        }
+
+        return true;
+    }
+
+    private bool CheckStraightSixVertical(DiceHandler die)
+    {
+        DiceHandler otherDie;
+
+        // Check 2-6
+        int upCount = die.value - 2;
+
+        for (int i = upCount; i > 0; i--)
+        {
+            if (die.gridPosition.y + i >= height)
+                return false;
+            else
+            {
+                otherDie = board[(int)die.gridPosition.x, (int)(die.gridPosition.y + i)].GetComponent<DiceHandler>();
+                if (otherDie.dieColor != die.dieColor || otherDie.value != die.value - i)
+                    return false;
+                else
+                    continue;
+            }
+        }
+
+        int downCount = 6 - die.value;
+
+        for (int i = downCount; i > 0; i--)
+        {
+            if (die.gridPosition.y - i < 0)
+                return false;
+            else
+            {
+                otherDie = board[(int)die.gridPosition.x, (int)(die.gridPosition.y - i)].GetComponent<DiceHandler>();
+                if (otherDie.dieColor != die.dieColor || otherDie.value != die.value + i)
+                    return false;
+                else
+                    continue;
+            }
+        }
+
+        return true;
+    }
+
+    private bool CheckThreeHorizontal(DiceHandler die)
+    {
+        if (die.gridPosition.x - 2 >= 0)
+        {
+            DiceHandler twoLeft = board[(int)(die.gridPosition.x - 2), (int)die.gridPosition.y].GetComponent<DiceHandler>();
+            DiceHandler oneLeft = board[(int)(die.gridPosition.x - 1), (int)die.gridPosition.y].GetComponent<DiceHandler>();
+
+            if ((twoLeft.dieColor == die.dieColor && twoLeft.value == die.value) &&
+                (oneLeft.dieColor == die.dieColor && oneLeft.value == die.value))
+                return true;
+        }
+        
+        if(die.gridPosition.x - 1 >= 0 && die.gridPosition.x + 1 < width)
+        {
+            DiceHandler oneLeft = board[(int)(die.gridPosition.x - 1), (int)die.gridPosition.y].GetComponent<DiceHandler>();
+            DiceHandler oneRight = board[(int)(die.gridPosition.x + 1), (int)die.gridPosition.y].GetComponent<DiceHandler>();
+
+            if ((oneLeft.dieColor == die.dieColor && oneLeft.value == die.value) &&
+                (oneRight.dieColor == die.dieColor && oneRight.value == die.value))
+                return true;
+        }
+
+        if (die.gridPosition.x + 2 < width)
+        {
+            DiceHandler oneRight = board[(int)(die.gridPosition.x + 1), (int)die.gridPosition.y].GetComponent<DiceHandler>();
+            DiceHandler twoRight = board[(int)(die.gridPosition.x + 2), (int)die.gridPosition.y].GetComponent<DiceHandler>();
+
+            if ((oneRight.dieColor == die.dieColor && oneRight.value == die.value) &&
+                (twoRight.dieColor == die.dieColor && twoRight.value == die.value))
+                return true;
+        }
+
+        return false;
+    }
+
+    private bool CheckThreeVertical(DiceHandler die)
+    {
+        if (die.gridPosition.y - 2 >= 0)
+        {
+            DiceHandler twoDown = board[(int)die.gridPosition.x, (int)(die.gridPosition.y - 2)].GetComponent<DiceHandler>();
+            DiceHandler oneDown = board[(int)die.gridPosition.x, (int)(die.gridPosition.y - 1)].GetComponent<DiceHandler>();
+
+            if ((twoDown.dieColor == die.dieColor && twoDown.value == die.value) &&
+                (oneDown.dieColor == die.dieColor && oneDown.value == die.value))
+                return true;
+        }
+
+        if (die.gridPosition.y - 1 >= 0 && die.gridPosition.y + 1 < height)
+        {
+            DiceHandler oneDown = board[(int)die.gridPosition.x, (int)(die.gridPosition.y - 1)].GetComponent<DiceHandler>();
+            DiceHandler oneUp = board[(int)die.gridPosition.x, (int)(die.gridPosition.y + 1)].GetComponent<DiceHandler>();
+
+            if ((oneDown.dieColor == die.dieColor && oneDown.value == die.value) &&
+                (oneUp.dieColor == die.dieColor && oneUp.value == die.value))
+                return true;
+        }
+
+        if (die.gridPosition.y + 2 < height)
+        {
+            DiceHandler oneUp = board[(int)die.gridPosition.x, (int)(die.gridPosition.y + 1)].GetComponent<DiceHandler>();
+            DiceHandler twoUp = board[(int)die.gridPosition.x, (int)(die.gridPosition.y + 2)].GetComponent<DiceHandler>();
+
+            if ((oneUp.dieColor == die.dieColor && oneUp.value == die.value) &&
+                (twoUp.dieColor == die.dieColor && twoUp.value == die.value))
+                return true;
+        }
+
+        return false;
+    }
+
+    #endregion
 }

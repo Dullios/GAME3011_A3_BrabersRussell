@@ -138,6 +138,6 @@ public class DiceHandler : MonoBehaviour
 
         lerpTime = 0.0f;
         isSelected = false;
-        GameManager.instance.isSwapping = false;
+        //GameManager.instance.isSwapping = false;
     }
 }
