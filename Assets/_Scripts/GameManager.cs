@@ -2,6 +2,14 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+[System.Serializable]
+public enum Difficulty
+{
+    EASY,
+    MEDIUM,
+    HARD
+}
+
 public class GameManager : MonoBehaviour
 {
     public Material[] dieMaterials;
@@ -17,12 +25,15 @@ public class GameManager : MonoBehaviour
 
     public float resetHeight = 6.1f; // Increase by 1.1 vertically
 
+    [Header("Dice Properties")]
     public DiceHandler selectedDie;
     public bool IsSwapping => isSwapping;
     [SerializeField] private bool isSwapping = false;
 
-    [Header("Dice Properties")]
     public Vector3 endPosition;
+
+    [Header("Settings and UI")]
+    public Difficulty difficulty;
 
     public static GameManager instance;
 
