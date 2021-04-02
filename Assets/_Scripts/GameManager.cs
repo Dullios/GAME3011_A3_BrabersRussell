@@ -15,8 +15,11 @@ public class GameManager : MonoBehaviour
     public float xOffset;
     public float yOffset;
 
+    public float resetHeight = 6.1f; // Increase by 1.1 vertically
+
     public DiceHandler selectedDie;
-    public bool isSwapping = false;
+    public bool IsSwapping => isSwapping;
+    [SerializeField] private bool isSwapping = false;
 
     [Header("Dice Properties")]
     public Vector3 endPosition;
@@ -38,6 +41,23 @@ public class GameManager : MonoBehaviour
 
         isSwapping = true;
         InstantiateBoard();
+    }
+
+    public void SetIsSwapping()
+    {
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                if (board[x, y].GetComponent<DiceHandler>().isTumbling)
+                {
+                    isSwapping = true;
+                    return;
+                }
+            }
+        }
+
+        isSwapping = false;
     }
 
     private void InstantiateBoard()
@@ -67,8 +87,9 @@ public class GameManager : MonoBehaviour
 
                 prevVal = diceHandler.value;
 
+                Vector3 startPosition = diceHandler.transform.position;
                 endPosition = new Vector3(transform.position.x + (x * xOffset), transform.position.y + (y * yOffset), 0);
-                StartCoroutine(diceHandler.FallingRoutine(endPosition));
+                StartCoroutine(diceHandler.FallingRoutine(startPosition, endPosition));
             }
         }
     }
@@ -82,59 +103,183 @@ public class GameManager : MonoBehaviour
         Vector3 tempPos = secondDie.transform.position;
 
         secondHandler.gridPosition = selectedDie.gridPosition;
-        secondHandler.startPosition = secondDie.transform.position;
         board[(int)selectedDie.gridPosition.x, (int)selectedDie.gridPosition.y] = secondDie;
         
         selectedDie.gridPosition = tempGrid;
-        selectedDie.startPosition = selectedDie.transform.position;
         board[(int)tempGrid.x, (int)tempGrid.y] = selectedDie.gameObject;
 
-        StartCoroutine(secondHandler.SwapPosition(selectedDie.transform.position));
-        StartCoroutine(selectedDie.SwapPosition(tempPos));
-
-        CheckMatch(secondHandler);
-        CheckMatch(selectedDie);
+        StartCoroutine(secondHandler.SwapPosition(secondDie.transform.position, selectedDie.transform.position));
+        StartCoroutine(selectedDie.SwapPosition(selectedDie.transform.position, tempPos));
 
         selectedDie = null;
-        isSwapping = false;
     }
 
     public void CheckMatch(DiceHandler die)
     {
+        DiceHandler[] diceList;
+
         if (CheckStraightFiveHorizontal(die))
         {
+            int left = die.value - 1;
+            DiceHandler leftMostDie = board[(int)die.gridPosition.x - left, (int)die.gridPosition.y].GetComponent<DiceHandler>();
+
+            diceList = new DiceHandler[5];
+            for(int i = 0; i < 5; i++)
+                diceList[i] = board[(int)leftMostDie.gridPosition.x + i, (int)leftMostDie.gridPosition.y].GetComponent<DiceHandler>();
+
+            ResetHorizontal(diceList);
+
             Debug.Log("Horizontal Straight 5 Made!");
             return;
         }
 
         if (CheckStraightSixHorizontal(die))
         {
+            int left = die.value - 2;
+            DiceHandler leftMostDie = board[(int)die.gridPosition.x - left, (int)die.gridPosition.y].GetComponent<DiceHandler>();
+
+            diceList = new DiceHandler[5];
+            for (int i = 0; i < 5; i++)
+                diceList[i] = board[(int)leftMostDie.gridPosition.x + i, (int)leftMostDie.gridPosition.y].GetComponent<DiceHandler>();
+
+            ResetHorizontal(diceList);
+
             Debug.Log("Horizontal Straight 6 Made!");
             return;
         }
 
         if (CheckStraightFiveVertical(die))
         {
+            int up = die.value - 1;
+            DiceHandler upMostDie = board[(int)die.gridPosition.x, (int)die.gridPosition.y + up].GetComponent<DiceHandler>();
+
+            diceList = new DiceHandler[5];
+            for (int i = 0; i < 5; i++)
+                diceList[i] = board[(int)upMostDie.gridPosition.x, (int)upMostDie.gridPosition.y - i].GetComponent<DiceHandler>();
+
+            ResetVertical(diceList);
+
             Debug.Log("Vertical Straight 5 Made!");
             return;
         }
 
         if (CheckStraightSixVertical(die))
         {
+            int up = die.value - 2;
+            DiceHandler upMostDie = board[(int)die.gridPosition.x, (int)die.gridPosition.y + up].GetComponent<DiceHandler>();
+
+            diceList = new DiceHandler[5];
+            for (int i = 0; i < 5; i++)
+                diceList[i] = board[(int)upMostDie.gridPosition.x, (int)upMostDie.gridPosition.y - i].GetComponent<DiceHandler>();
+
+            ResetVertical(diceList);
+
             Debug.Log("Vertical Straight 6 Made!");
             return;
         }
 
-        if (CheckThreeHorizontal(die))
+        if (CheckThreeHorizontal(die, out diceList))
         {
+            ResetHorizontal(diceList);
+
             Debug.Log("Match Three Horizontal!");
             return;
         }
 
-        if (CheckThreeVertical(die))
+        if (CheckThreeVertical(die, out diceList))
         {
+            ResetVertical(diceList);
+
             Debug.Log("Match Three Vertical!");
             return;
+        }
+    }
+
+    private void ResetHorizontal(DiceHandler[] diceList)
+    {
+        isSwapping = true;
+        float delay = 0.0f;
+
+        foreach (DiceHandler dieHandler in diceList)
+        {
+            int xPos = (int)dieHandler.gridPosition.x;
+            int yPos = (int)dieHandler.gridPosition.y;
+
+            Vector3 pos = dieHandler.transform.position;
+            pos.y = resetHeight;
+            dieHandler.transform.position = pos;
+
+            for(int y = yPos + 1; y < height; y++)
+            {
+                Vector3 endPos = board[xPos, y].transform.position;
+                endPos.y -= 1.1f;
+
+                StartCoroutine(board[xPos, y].GetComponent<DiceHandler>().SwapPosition(board[xPos, y].transform.position, endPos));
+
+                board[xPos, y - 1] = board[xPos, y];
+                board[xPos, y - 1].GetComponent<DiceHandler>().gridPosition.y = y - 1;
+            }
+
+            dieHandler.value = Random.Range(1, 7);
+            dieHandler.fallDelay = delay;
+            
+            pos.y = 3.8f;
+            StartCoroutine(dieHandler.FallingRoutine(dieHandler.transform.position, pos));
+            board[xPos, height - 1] = dieHandler.gameObject;
+            board[xPos, height - 1].GetComponent<DiceHandler>().gridPosition = new Vector2(xPos, height - 1);
+
+            delay += 0.5f;
+        }
+    }
+
+    private void ResetVertical(DiceHandler[] diceList)
+    {
+        isSwapping = true;
+        float delay = 0.5f;
+
+        // Move cleared dice to the top
+        for(int i = 0; i < diceList.Length; i++)
+        {
+            int xPos = (int)diceList[i].gridPosition.x;
+            int yPos = (int)diceList[i].gridPosition.y;
+
+            Vector3 pos = diceList[i].transform.position;
+            pos.y = resetHeight + (yOffset * i);
+            diceList[i].transform.position = pos;
+
+            diceList[i].value = Random.Range(1, 7);
+            diceList[i].fallDelay = delay * i;
+        }
+
+        // Slide other dice down
+        DiceHandler topDie = diceList[0];
+
+        if (topDie.gridPosition.y != height - 1)
+        {
+            for (int y = (int)(topDie.gridPosition.y + 1); y < height; y++)
+            {
+                DiceHandler die = board[(int)topDie.gridPosition.x, y].GetComponent<DiceHandler>();
+
+                Vector3 endPos = die.transform.position;
+                endPos.y -= 1.1f * diceList.Length;
+                StartCoroutine(die.SwapPosition(die.transform.position, endPos));
+
+                board[(int)die.gridPosition.x, y - diceList.Length] = die.gameObject;
+                die.gridPosition = new Vector2(die.gridPosition.x, y - diceList.Length);
+            }
+        }
+
+        // Drop cleared dice
+        for (int i = 0; i < diceList.Length; i++)
+        {
+            Vector3 endPos = diceList[i].transform.position;
+            endPos.y = 3.8f - (yOffset * (diceList.Length - i - 1));
+
+            StartCoroutine(diceList[i].FallingRoutine(diceList[i].transform.position, endPos));
+
+            int gridY = height - (diceList.Length - i);
+            board[(int)diceList[i].gridPosition.x, gridY] = diceList[i].gameObject;
+            diceList[i].gridPosition = new Vector2(diceList[i].gridPosition.x, gridY);
         }
     }
 
@@ -299,8 +444,10 @@ public class GameManager : MonoBehaviour
         return true;
     }
 
-    private bool CheckThreeHorizontal(DiceHandler die)
+    private bool CheckThreeHorizontal(DiceHandler die, out DiceHandler[] diceList)
     {
+        diceList = new DiceHandler[3];
+
         if (die.gridPosition.x - 2 >= 0)
         {
             DiceHandler twoLeft = board[(int)(die.gridPosition.x - 2), (int)die.gridPosition.y].GetComponent<DiceHandler>();
@@ -308,7 +455,13 @@ public class GameManager : MonoBehaviour
 
             if ((twoLeft.dieColor == die.dieColor && twoLeft.value == die.value) &&
                 (oneLeft.dieColor == die.dieColor && oneLeft.value == die.value))
+            {
+                diceList[0] = twoLeft;
+                diceList[1] = oneLeft;
+                diceList[2] = die;
+                
                 return true;
+            }
         }
         
         if(die.gridPosition.x - 1 >= 0 && die.gridPosition.x + 1 < width)
@@ -318,7 +471,13 @@ public class GameManager : MonoBehaviour
 
             if ((oneLeft.dieColor == die.dieColor && oneLeft.value == die.value) &&
                 (oneRight.dieColor == die.dieColor && oneRight.value == die.value))
+            {
+                diceList[0] = oneLeft;
+                diceList[1] = die;
+                diceList[2] = oneRight;
+
                 return true;
+            }
         }
 
         if (die.gridPosition.x + 2 < width)
@@ -328,14 +487,22 @@ public class GameManager : MonoBehaviour
 
             if ((oneRight.dieColor == die.dieColor && oneRight.value == die.value) &&
                 (twoRight.dieColor == die.dieColor && twoRight.value == die.value))
+            {
+                diceList[0] = die;
+                diceList[1] = oneRight;
+                diceList[2] = twoRight;
+
                 return true;
+            }
         }
 
         return false;
     }
 
-    private bool CheckThreeVertical(DiceHandler die)
+    private bool CheckThreeVertical(DiceHandler die, out DiceHandler[] diceList)
     {
+        diceList = new DiceHandler[3];
+
         if (die.gridPosition.y - 2 >= 0)
         {
             DiceHandler twoDown = board[(int)die.gridPosition.x, (int)(die.gridPosition.y - 2)].GetComponent<DiceHandler>();
@@ -343,7 +510,13 @@ public class GameManager : MonoBehaviour
 
             if ((twoDown.dieColor == die.dieColor && twoDown.value == die.value) &&
                 (oneDown.dieColor == die.dieColor && oneDown.value == die.value))
+            {
+                diceList[0] = die;
+                diceList[1] = oneDown;
+                diceList[2] = twoDown;
+
                 return true;
+            }
         }
 
         if (die.gridPosition.y - 1 >= 0 && die.gridPosition.y + 1 < height)
@@ -353,7 +526,13 @@ public class GameManager : MonoBehaviour
 
             if ((oneDown.dieColor == die.dieColor && oneDown.value == die.value) &&
                 (oneUp.dieColor == die.dieColor && oneUp.value == die.value))
+            {
+                diceList[0] = oneUp;
+                diceList[1] = die;
+                diceList[2] = oneDown;
+
                 return true;
+            }
         }
 
         if (die.gridPosition.y + 2 < height)
@@ -363,7 +542,13 @@ public class GameManager : MonoBehaviour
 
             if ((oneUp.dieColor == die.dieColor && oneUp.value == die.value) &&
                 (twoUp.dieColor == die.dieColor && twoUp.value == die.value))
+            {
+                diceList[0] = twoUp;
+                diceList[1] = oneUp;
+                diceList[2] = die;
+
                 return true;
+            }
         }
 
         return false;

@@ -31,7 +31,6 @@ public class DiceHandler : MonoBehaviour
 
     public float swapSpeed;
 
-    public Vector3 startPosition;
     private float lerpTime = 0.0f;
 
     private Dictionary<int, Vector3> faceRotation = new Dictionary<int, Vector3>();
@@ -48,20 +47,20 @@ public class DiceHandler : MonoBehaviour
         faceRotation[4] = new Vector3(90, 0, -90);
         faceRotation[5] = new Vector3(-90, 0, 0);
         faceRotation[6] = new Vector3(0, 0, -90);
-        
-        startPosition = transform.position;
     }
 
-    public IEnumerator FallingRoutine(Vector3 endPos)
+    public IEnumerator FallingRoutine(Vector3 startPos, Vector3 endPos)
     {
         yield return new WaitForSeconds(fallDelay);
 
         while (lerpTime < 1)
         {
+            isTumbling = true;
+
             transform.Rotate(Random.Range(-5.0f, -15.0f), Random.Range(-2.0f, 2.0f), Random.Range(-2.0f, 2.0f));
 
             lerpTime += fallSpeed * Time.deltaTime;
-            transform.position = Vector3.Lerp(startPosition, endPos, lerpTime);
+            transform.position = Vector3.Lerp(startPos, endPos, lerpTime);
 
             if (lerpTime >= 1.0f)
             {
@@ -74,8 +73,7 @@ public class DiceHandler : MonoBehaviour
 
         lerpTime = 0.0f;
 
-        if (gridPosition.x == GameManager.instance.width - 1 && gridPosition.y == GameManager.instance.height - 1)
-            GameManager.instance.isSwapping = false;
+        GameManager.instance.SetIsSwapping();
     }
 
     public void AlignDie()
@@ -99,12 +97,13 @@ public class DiceHandler : MonoBehaviour
 
         if (hit.transform != null && hit.transform.CompareTag("Die") && hit.transform.gameObject == gameObject)
         {
-            if (GameManager.instance.isSwapping)
+            if (GameManager.instance.IsSwapping)
                 return;
 
             if (isSelected)
             {
                 isSelected = false;
+
                 GameManager.instance.selectedDie = null;
             }
             else
@@ -112,6 +111,7 @@ public class DiceHandler : MonoBehaviour
                 if (GameManager.instance.selectedDie == null)
                 {
                     isSelected = true;
+
                     GameManager.instance.selectedDie = this;
                 }
                 else
@@ -126,18 +126,21 @@ public class DiceHandler : MonoBehaviour
         }
     }
 
-    public IEnumerator SwapPosition(Vector3 endPos)
+    public IEnumerator SwapPosition(Vector3 startPos, Vector3 endPos)
     {
         while (lerpTime < 1)
         {
             lerpTime += swapSpeed * Time.deltaTime;
-            transform.position = Vector3.Lerp(startPosition, endPos, lerpTime);
+            transform.position = Vector3.Lerp(startPos, endPos, lerpTime);
 
             yield return null;
         }
 
         lerpTime = 0.0f;
         isSelected = false;
-        //GameManager.instance.isSwapping = false;
+        GameManager.instance.SetIsSwapping();
+
+        if(!GameManager.instance.IsSwapping)
+            GameManager.instance.CheckMatch(this);
     }
 }
