@@ -27,13 +27,20 @@ public class GameManager : MonoBehaviour
 
     [Header("Dice Properties")]
     public DiceHandler selectedDie;
-    public bool IsSwapping => isSwapping;
-    [SerializeField] private bool isSwapping = false;
-
     public Vector3 endPosition;
 
+    [Header("Game States")]
+    public bool gameStarted = false;
+    [SerializeField] private bool isSwapping = false;
+    public bool IsSwapping => isSwapping;
+
     [Header("Settings and UI")]
+    
     public Difficulty difficulty;
+    public float timer;
+    public float maxTime;
+    public int reqScore;
+    public int score;
 
     public static GameManager instance;
 
@@ -48,10 +55,31 @@ public class GameManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        board = new GameObject[width, height];
+        //board = new GameObject[width, height];
 
-        isSwapping = true;
-        InstantiateBoard();
+        //isSwapping = true;
+        //InstantiateBoard();
+    }
+
+    private void Update()
+    {
+        if (gameStarted)
+        {
+            timer -= Time.deltaTime;
+            UIManager.instance.SetTimer(timer);
+
+            if (timer <= 0)
+            {
+                UIManager.instance.SetGameOverText(false);
+                gameStarted = false;
+            }
+
+            if(score >= reqScore)
+            {
+                UIManager.instance.SetGameOverText(true);
+                gameStarted = false;
+            }
+        }
     }
 
     public void SetIsSwapping()
@@ -69,12 +97,30 @@ public class GameManager : MonoBehaviour
         }
 
         isSwapping = false;
+        gameStarted = true;
+
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                CheckMatch(board[x, y].GetComponent<DiceHandler>());
+            }
+        }
     }
 
-    private void InstantiateBoard()
+    public void InstantiateBoard()
     {
+        board = new GameObject[width, height];
+        isSwapping = true;
+
+        timer = maxTime;
+
         int leftVal = 0;
         int prevVal = 0;
+
+        // Set material by difficulty
+        int maxCount = (int)difficulty;
+        int count = 0;
 
         for(int x = 0; x < width; x++)
         {
@@ -88,6 +134,13 @@ public class GameManager : MonoBehaviour
                 DiceHandler diceHandler = tempDie.GetComponent<DiceHandler>();
                 diceHandler.gridPosition = new Vector2(x, y);
                 diceHandler.fallDelay = (y * 1.5f) + (x * 0.2f);
+
+                diceHandler.GetComponent<MeshRenderer>().material = dieMaterials[count];
+                diceHandler.dieColor = (DiceColor)count;
+                
+                count++;
+                if (count > maxCount)
+                    count = 0;
 
                 if (x > 0)
                     leftVal = board[x - 1, y].GetComponent<DiceHandler>().value;
@@ -131,11 +184,14 @@ public class GameManager : MonoBehaviour
 
         if (CheckStraightFiveHorizontal(die))
         {
+            score += 250;
+            UIManager.instance.SetScore(score);
+
             int left = die.value - 1;
             DiceHandler leftMostDie = board[(int)die.gridPosition.x - left, (int)die.gridPosition.y].GetComponent<DiceHandler>();
 
             diceList = new DiceHandler[5];
-            for(int i = 0; i < 5; i++)
+            for (int i = 0; i < 5; i++)
                 diceList[i] = board[(int)leftMostDie.gridPosition.x + i, (int)leftMostDie.gridPosition.y].GetComponent<DiceHandler>();
 
             ResetHorizontal(diceList);
@@ -146,6 +202,9 @@ public class GameManager : MonoBehaviour
 
         if (CheckStraightSixHorizontal(die))
         {
+            score += 250;
+            UIManager.instance.SetScore(score);
+
             int left = die.value - 2;
             DiceHandler leftMostDie = board[(int)die.gridPosition.x - left, (int)die.gridPosition.y].GetComponent<DiceHandler>();
 
@@ -161,6 +220,9 @@ public class GameManager : MonoBehaviour
 
         if (CheckStraightFiveVertical(die))
         {
+            score += 250;
+            UIManager.instance.SetScore(score);
+
             int up = die.value - 1;
             DiceHandler upMostDie = board[(int)die.gridPosition.x, (int)die.gridPosition.y + up].GetComponent<DiceHandler>();
 
@@ -176,6 +238,9 @@ public class GameManager : MonoBehaviour
 
         if (CheckStraightSixVertical(die))
         {
+            score += 250;
+            UIManager.instance.SetScore(score);
+
             int up = die.value - 2;
             DiceHandler upMostDie = board[(int)die.gridPosition.x, (int)die.gridPosition.y + up].GetComponent<DiceHandler>();
 
@@ -191,6 +256,9 @@ public class GameManager : MonoBehaviour
 
         if (CheckThreeHorizontal(die, out diceList))
         {
+            score += 100;
+            UIManager.instance.SetScore(score);
+
             ResetHorizontal(diceList);
 
             Debug.Log("Match Three Horizontal!");
@@ -199,6 +267,9 @@ public class GameManager : MonoBehaviour
 
         if (CheckThreeVertical(die, out diceList))
         {
+            score += 100;
+            UIManager.instance.SetScore(score);
+
             ResetVertical(diceList);
 
             Debug.Log("Match Three Vertical!");
@@ -213,6 +284,8 @@ public class GameManager : MonoBehaviour
 
         foreach (DiceHandler dieHandler in diceList)
         {
+            dieHandler.isTumbling = true;
+
             int xPos = (int)dieHandler.gridPosition.x;
             int yPos = (int)dieHandler.gridPosition.y;
 
@@ -251,6 +324,8 @@ public class GameManager : MonoBehaviour
         // Move cleared dice to the top
         for(int i = 0; i < diceList.Length; i++)
         {
+            diceList[i].isTumbling = true;
+
             int xPos = (int)diceList[i].gridPosition.x;
             int yPos = (int)diceList[i].gridPosition.y;
 

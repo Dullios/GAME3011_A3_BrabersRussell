@@ -139,8 +139,5 @@ public class DiceHandler : MonoBehaviour
         lerpTime = 0.0f;
         isSelected = false;
         GameManager.instance.SetIsSwapping();
-
-        if(!GameManager.instance.IsSwapping)
-            GameManager.instance.CheckMatch(this);
     }
 }

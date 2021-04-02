@@ -28,6 +28,7 @@ public class DicePool : MonoBehaviour
         for (int i = 0; i < count; i++)
         {
             GameObject tempDie = Instantiate(diePrefab, Vector3.zero, Quaternion.identity, transform);
+            tempDie.transform.localPosition = Vector3.zero;
             dieQueue.Enqueue(tempDie);
         }
     }
