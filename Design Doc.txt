@@ -1,0 +1,22 @@
+==========================
+= GAME 3011 Assignment 3 =
+==========================
+
+By: Russell Brabers - 101192571
+
+
+Objective:
+The object of the game is to make matches of dice as either three of a kind or a straight,
+matching dice values and colours.
+
+Difficulty:
+There are three levels of difficult: easy, medium, hard.
+The difficulties add more dice colours, time, and required score to win.
+
+Controls:
+The player can click any two dice to swap their places as long as they're adjacent, but not diagonal.
+
+Scoring:
+Three of a Kind, vertically or horizontally, is worth 100 points.
+A Straight (1-5 or 2-6) is worth 250 points.
+ - Straights are made left to right, or top down, but not in reverse.
